@@ -4,13 +4,14 @@ using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
+using Deriva.Excel.Diagnostics;
 using ExcelDataReader;
 
 namespace Deriva.Excel.Calendar
 {
     internal static class HolidayFetcher
     {
-        private const string AnbimaUrl =
+        internal const string AnbimaUrl =
             "https://www.anbima.com.br/feriados/arqs/feriados_nacionais.xls";
 
         internal static void ConfigureTls()
@@ -19,12 +20,15 @@ namespace Deriva.Excel.Calendar
                 SecurityProtocolType.Tls12 | SecurityProtocolType.Tls11;
         }
 
-        internal static async Task<List<DateTime>> FetchAsync()
+        internal static async Task<List<DateTime>> FetchAsync(string url = null)
         {
+            var requestUrl = string.IsNullOrWhiteSpace(url) ? AnbimaUrl : url.Trim();
             using (var client = new HttpClient())
             {
                 client.Timeout = TimeSpan.FromSeconds(30);
-                var bytes = await client.GetByteArrayAsync(AnbimaUrl).ConfigureAwait(false);
+                DerivaLog.Info("Holiday download started. Url=" + requestUrl);
+                var bytes = await client.GetByteArrayAsync(requestUrl).ConfigureAwait(false);
+                DerivaLog.Info("Holiday download bytes=" + bytes.Length);
                 return ParseXls(bytes);
             }
         }
@@ -70,6 +74,7 @@ namespace Deriva.Excel.Calendar
                 }
             }
 
+            DerivaLog.Info("Holiday parse complete. Count=" + holidays.Count);
             return holidays;
         }
     }

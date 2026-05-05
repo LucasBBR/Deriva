@@ -14,6 +14,53 @@ Excel-DNA add-in for financial calculations and derivatives pricing utilities.
 | `ProxMonths(date, months, convention)` | Adds calendar months then adjusts to business day per convention. |
 | `Holidays(start_date, end_date)` | Returns a vertical spill array of all ANBIMA national holidays in the period. |
 
+## Interpolation Functions
+
+| Function | Description |
+|---|---|
+| `InterpolateValues(x_values, y_values, x, [method])` | Interpolates the value of `y` for a target `x`. Uses natural cubic spline by default; pass `"linear"` to use piecewise linear interpolation. |
+
+`x_values` can contain numbers or Excel dates. `y_values` must contain numeric values with the same number of points as `x_values`. The function sorts points by `x`, rejects duplicate `x` values, and does not extrapolate outside the known range.
+
+Examples:
+
+```excel
+=InterpolateValues(A2:A20,B2:B20,F2)
+=InterpolateValues(A2:A20,B2:B20,F2,"linear")
+```
+
+Accepted methods are `cubic`, `cubic_spline`, `spline`, and `linear`. Leaving the method blank is the same as `cubic_spline`.
+
+## ETTJ Functions
+
+| Function | Description |
+|---|---|
+| `GetETTJ(date, [curve], [cache])` | Fetches B3 TaxaSwap ETTJ data for one date and spills `refdate`, `curva`, `descricao`, `dias_corridos`, `dias_uteis`, `taxa`, and `vertice`. |
+| `GetETTJHistorico(start_date, end_date, [curve], [cache], [ignore_errors])` | Fetches the same long table for an interval, skipping weekends and optionally skipping no-data/error dates. |
+| `GetCurve(curve, reference_date, end_date)` | Fetches one ETTJ curve and returns the interpolated rate for `DU(reference_date, end_date)` using the default cubic spline interpolation. `end_date` may be a scalar or an Excel range/spill. |
+
+`curve` defaults to `PRE` and accepts a single code, comma-separated codes such as `"PRE,DIC"`, an Excel range, or `"TODOS"`. Rates are returned in decimal form, so `0.1465` means 14.65% a.a.
+
+Examples:
+
+```excel
+=GetETTJ("09/04/2026","PRE,DIC")
+=GetETTJHistorico("01/04/2026","09/04/2026","PRE")
+=GetCurve("PRE",ProxDU(TODAY(),-1),ProxDU(ProxDU(TODAY(),-1),252))
+=GetCurve("PRE",$A$1,B2:B5000)
+```
+
+For large sheets, prefer one `GetCurve` call over an `end_date` range instead of thousands of scalar formulas. ETTJ data is fetched from B3 TaxaSwap files at `https://www.b3.com.br/pesquisapregao/download?filelist=TS{YYMMDD}.ex_,` and cached by date under `%LOCALAPPDATA%\Deriva\ETTJ\Cache\TS` by default.
+
+## Ribbon
+
+The add-in adds a `Deriva` ribbon tab with:
+
+| Button | Description |
+|---|---|
+| `Dashboard` | Opens a dialog showing the last Holiday and ETTJ update time, status, and detail. |
+| `Settings` | Opens a dialog for the holiday URL, ETTJ init curves, ETTJ cache directory, and B3 source metadata. |
+
 ## Business Day Conventions
 
 | Code | Meaning |
